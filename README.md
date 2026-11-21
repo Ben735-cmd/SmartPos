@@ -29,13 +29,14 @@ npm run dev
 
 ## AI photo import
 
-The `extract-products` edge function (`supabase/functions/extract-products`) needs one secret:
+The `extract-products` edge function (`supabase/functions/extract-products`) uses [Groq](https://console.groq.com) (free tier) and needs one secret:
 
-1. Supabase dashboard → Edge Functions → Secrets
-2. Add `ANTHROPIC_API_KEY`
-3. Optional: `ANTHROPIC_MODEL` to override the default model
+1. Create a free API key at console.groq.com/keys
+2. Supabase dashboard → Edge Functions → Secrets
+3. Add `GROQ_API_KEY`
+4. Optional: `GROQ_MODEL` to override the default (`qwen/qwen3.8-27b`)
 
-Only signed-in users can call it. Photos are not stored.
+Only signed-in users can call it. Photos are sent to Groq to be read and are not stored by SmartPos.
 
 ## Roadmap
 
