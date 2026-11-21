@@ -14,6 +14,9 @@ export type Product = {
   stock: number;
   low_stock_threshold: number;
   active: boolean;
+  barcode: string | null;
+  track_stock: boolean;
+  quick_added: boolean;
 };
 
 export type PaymentMethod = "cash" | "mtn_momo" | "airtel_money" | "zamtel_kwacha";

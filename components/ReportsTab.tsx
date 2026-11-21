@@ -94,7 +94,9 @@ export default function ReportsTab({ shop }: { shop: Shop }) {
     };
   }, [sales, expenses]);
 
-  const lowStock = products.filter((p) => p.stock <= p.low_stock_threshold).sort((a, b) => a.stock - b.stock);
+  const lowStock = products
+    .filter((p) => p.track_stock && p.stock <= p.low_stock_threshold)
+    .sort((a, b) => a.stock - b.stock);
 
   async function addExpense(e: React.FormEvent) {
     e.preventDefault();
