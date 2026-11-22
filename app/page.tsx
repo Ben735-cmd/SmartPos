@@ -6,6 +6,7 @@ import SellTab from "@/components/SellTab";
 import ProductsTab from "@/components/ProductsTab";
 import SalesTab from "@/components/SalesTab";
 import ReportsTab from "@/components/ReportsTab";
+import StatusBar from "@/components/StatusBar";
 
 const TABS = [
   { id: "sell", label: "🛒 Sell" },
@@ -29,9 +30,12 @@ export default function Home() {
                 <div className="name">{shop.name}</div>
                 <div className="sub">SmartPos</div>
               </div>
-              <button className="btn ghost small" onClick={signOut}>
-                Sign out
-              </button>
+              <div className="row">
+                <StatusBar />
+                <button className="btn ghost small" onClick={signOut}>
+                  Sign out
+                </button>
+              </div>
             </div>
 
             {/* Tabs stay mounted-by-key so each one refetches fresh data when opened. */}

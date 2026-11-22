@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { ImportRow } from "@/lib/csv";
+import { friendlyError } from "@/lib/offline";
 import type { Shop } from "@/lib/types";
 
 type Existing = { id: string; name: string; barcode: string | null };
@@ -95,7 +96,7 @@ export default function ImportReview({
     for (let i = 0; i < toInsert.length; i += 200) {
       const { error: err } = await supabase.from("products").insert(toInsert.slice(i, i + 200));
       if (err) {
-        setError(err.message.includes("barcode_key") ? "Two products have the same barcode. Fix it and try again." : err.message);
+        setError(err.message.includes("barcode_key") ? "Two products have the same barcode. Fix it and try again." : friendlyError(err));
         setBusy(false);
         return;
       }
@@ -106,7 +107,7 @@ export default function ImportReview({
       );
       const failed = results.find((x) => x.error);
       if (failed?.error) {
-        setError(failed.error.message);
+        setError(friendlyError(failed.error));
         setBusy(false);
         return;
       }

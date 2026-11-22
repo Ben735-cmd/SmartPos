@@ -3,6 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { daysAgo, localDate, money } from "@/lib/format";
+import { loadReportData } from "@/lib/data";
+import { outboxAll } from "@/lib/idb";
+import { discardOp, enqueue, friendlyError, useSync } from "@/lib/offline";
+import { uuid } from "@/lib/pending";
 import { PAYMENT_LABELS, type Expense, type PaymentMethod, type Product, type Sale, type Shop } from "@/lib/types";
 
 type Day = { date: string; revenue: number; cost: number; expenses: number };
@@ -19,31 +23,34 @@ export default function ReportsTab({ shop }: { shop: Shop }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
-  async function load() {
-    const since = daysAgo(29);
-    const [s, e, p] = await Promise.all([
-      supabase
-        .from("sales")
-        .select("*, sale_items(*)")
-        .gte("created_at", since.toISOString())
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("expenses")
-        .select("*")
-        .gte("expense_date", localDate(since))
-        .order("expense_date", { ascending: false })
-        .order("created_at", { ascending: false }),
-      supabase.from("products").select("*").eq("active", true),
-    ]);
-    setSales((s.data as Sale[]) ?? []);
-    setExpenses((e.data as Expense[]) ?? []);
-    setProducts((p.data as Product[]) ?? []);
+  const sync = useSync();
+  const [stale, setStale] = useState(false);
+
+  async function load(first = false) {
+    if (first) {
+      const quick = await loadReportData(shop.id, true);
+      if (quick.hasData || quick.sales.length > 0) {
+        setSales(quick.sales);
+        setExpenses(quick.expenses);
+        setProducts(quick.products);
+        setLoading(false);
+      }
+    }
+    const r = await loadReportData(shop.id);
+    setSales(r.sales);
+    setExpenses(r.expenses);
+    setProducts(r.products);
+    setStale(r.stale);
     setLoading(false);
   }
 
   useEffect(() => {
-    load();
-  }, []);
+    load(true);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (sync.lastSync) load();
+  }, [sync.lastSync]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const report = useMemo(() => {
     const days = new Map<string, Day>();
@@ -102,21 +109,43 @@ export default function ReportsTab({ shop }: { shop: Shop }) {
     e.preventDefault();
     setBusy(true);
     setError("");
-    const { error: err } = await supabase
-      .from("expenses")
-      .insert({ shop_id: shop.id, description: desc.trim(), amount: Number(amount), category });
-    if (err) setError(err.message);
-    else {
+    try {
+      // Saved on the phone first, so it works offline too.
+      await enqueue({
+        kind: "expense",
+        shop_id: shop.id,
+        payload: {
+          id: uuid(),
+          shop_id: shop.id,
+          description: desc.trim(),
+          amount: Number(amount),
+          category,
+          expense_date: localDate(),
+        },
+      });
       setDesc("");
       setAmount("");
       await load();
+    } catch {
+      setError("Couldn't save on the phone. Check free storage and try again.");
     }
     setBusy(false);
   }
 
   async function removeExpense(id: string) {
     if (!confirm("Delete this expense?")) return;
-    await supabase.from("expenses").delete().eq("id", id);
+    setError("");
+    // An expense that hasn't reached the server yet can just be dropped from the phone's queue.
+    const queued = (await outboxAll()).find((o) => o.kind === "expense" && o.payload.id === id);
+    if (queued?.seq !== undefined) {
+      await discardOp(queued.seq);
+    } else {
+      const { error: err } = await supabase.from("expenses").delete().eq("id", id);
+      if (err) {
+        setError(friendlyError(err));
+        return;
+      }
+    }
     await load();
   }
 
@@ -128,6 +157,12 @@ export default function ReportsTab({ shop }: { shop: Shop }) {
 
   return (
     <>
+      {stale && !sync.online && (
+        <p className="muted">
+          Offline: these figures use your last saved data plus sales made on this phone since. They'll update when you're
+          back online.
+        </p>
+      )}
       <h2>Today</h2>
       <div className="stats">
         <div className="stat">

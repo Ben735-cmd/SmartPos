@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { money } from "@/lib/format";
+import { loadProducts } from "@/lib/data";
+import { friendlyError, useSync } from "@/lib/offline";
 import type { Product, Shop } from "@/lib/types";
 import BulkAdd from "./BulkAdd";
 import BarcodeScanner from "./BarcodeScanner";
@@ -41,15 +43,30 @@ export default function ProductsTab({ shop }: { shop: Shop }) {
   const [notice, setNotice] = useState("");
   const [query, setQuery] = useState("");
 
-  async function load() {
-    const { data } = await supabase.from("products").select("*").eq("active", true).order("name");
-    setProducts((data as Product[]) ?? []);
+  const sync = useSync();
+  const [stale, setStale] = useState(false);
+
+  async function load(first = false) {
+    if (first) {
+      const quick = await loadProducts(shop.id, true);
+      if (quick.products.length > 0) {
+        setProducts(quick.products);
+        setLoading(false);
+      }
+    }
+    const { products: fresh, stale: isStale } = await loadProducts(shop.id);
+    setProducts(fresh);
+    setStale(isStale);
     setLoading(false);
   }
 
   useEffect(() => {
-    load();
-  }, []);
+    load(true);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (sync.lastSync) load();
+  }, [sync.lastSync]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const tracked = products.filter((p) => p.track_stock);
   const stockValue = tracked.reduce((s, p) => s + p.stock * Number(p.cost_price), 0);
@@ -94,7 +111,7 @@ export default function ProductsTab({ shop }: { shop: Shop }) {
       ? await supabase.from("products").update(row).eq("id", form.id)
       : await supabase.from("products").insert({ ...row, shop_id: shop.id });
     if (err) {
-      setError(err.message.includes("barcode_key") ? "Another product already uses that barcode." : err.message);
+      setError(err.message.includes("barcode_key") ? "Another product already uses that barcode." : friendlyError(err));
     } else {
       setForm(null);
       await load();
@@ -104,7 +121,11 @@ export default function ProductsTab({ shop }: { shop: Shop }) {
 
   async function remove(p: Product) {
     if (!confirm(`Remove ${p.name}? Past sales will keep their records.`)) return;
-    await supabase.from("products").update({ active: false }).eq("id", p.id);
+    const { error: err } = await supabase.from("products").update({ active: false }).eq("id", p.id);
+    if (err) {
+      setNotice(friendlyError(err));
+      return;
+    }
     await load();
   }
 
@@ -206,6 +227,12 @@ export default function ProductsTab({ shop }: { shop: Shop }) {
   return (
     <>
       {notice && <div className="notice">{notice}</div>}
+      {stale && !sync.online && (
+        <p className="muted">
+          Offline: showing your list from the last time you were connected. Adding, editing and removing products needs
+          internet. You can still sell, and use “Item not listed” at the till.
+        </p>
+      )}
 
       <div className="stats">
         <div className="stat">

@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { supabase } from "@/lib/supabase";
 import { money } from "@/lib/format";
+import { loadProducts } from "@/lib/data";
+import { enqueue, useSync } from "@/lib/offline";
+import { buildSalePayload, salePayloadToSale, uuid } from "@/lib/pending";
 import { PAYMENT_LABELS, type PaymentMethod, type Product, type Sale, type Shop } from "@/lib/types";
 import Receipt from "./Receipt";
 import BarcodeScanner from "./BarcodeScanner";
@@ -13,10 +15,13 @@ type NewItemMode = { kind: "quick" } | { kind: "scan"; barcode: string };
 
 const maxQty = (p: Product) => (p.track_stock ? p.stock : Infinity);
 const soldOut = (p: Product) => p.track_stock && p.stock <= 0;
+const byName = (a: Product, b: Product) => a.name.localeCompare(b.name);
 
 export default function SellTab({ shop }: { shop: Shop }) {
+  const sync = useSync();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [stale, setStale] = useState(false);
   const [query, setQuery] = useState("");
   const [cart, setCart] = useState<CartLine[]>([]);
   const [method, setMethod] = useState<PaymentMethod>("cash");
@@ -31,21 +36,43 @@ export default function SellTab({ shop }: { shop: Shop }) {
   const productsRef = useRef<Product[]>([]);
   productsRef.current = products;
 
-  async function load() {
-    const { data } = await supabase.from("products").select("*").eq("active", true).order("name");
-    setProducts((data as Product[]) ?? []);
+  async function load(first = false) {
+    if (first) {
+      // Show the saved list straight away; refresh from the server after.
+      const quick = await loadProducts(shop.id, true);
+      if (quick.products.length > 0) {
+        setProducts(quick.products);
+        setLoading(false);
+      }
+    }
+    const { products: fresh, stale: isStale } = await loadProducts(shop.id);
+    setProducts(fresh);
+    setStale(isStale);
     setLoading(false);
   }
 
   useEffect(() => {
-    load();
-  }, []);
+    load(true);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // After a background sync finishes, pick up the server's numbers.
+  useEffect(() => {
+    if (sync.lastSync) load();
+  }, [sync.lastSync]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!notice) return;
     const t = setTimeout(() => setNotice(""), 2500);
     return () => clearTimeout(t);
   }, [notice]);
+
+  // Warm the barcode scanner's code while there's internet, so it also opens offline.
+  useEffect(() => {
+    const idle = (window as unknown as { requestIdleCallback?: (cb: () => void) => void }).requestIdleCallback ?? ((cb: () => void) => setTimeout(cb, 3000));
+    idle(() => {
+      import("@zxing/browser").catch(() => {});
+    });
+  }, []);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -113,31 +140,28 @@ export default function SellTab({ shop }: { shop: Shop }) {
     }
   }
 
+  /** The sale is saved on this phone first, so it works the same with or without internet. */
   async function checkout() {
     setBusy(true);
     setError("");
-    const items = cart.map((l) => ({ product_id: l.product.id, quantity: l.quantity }));
-    const { data, error: rpcError } = await supabase.rpc("record_sale", {
-      p_shop_id: shop.id,
-      p_items: items,
-      p_method: method,
-      p_reference: method === "cash" ? null : reference.trim() || null,
-    });
-    if (rpcError) {
-      setError(rpcError.message);
-      setBusy(false);
-      return;
+    try {
+      const lines = cart.map((l) => ({ product: l.product, quantity: l.quantity }));
+      const payload = buildSalePayload(shop.id, lines, method, reference.trim() || null);
+      await enqueue({ kind: "sale", shop_id: shop.id, payload });
+      setReceipt(salePayloadToSale(payload));
+      // Update the screen's stock right away; the server's numbers replace this after syncing.
+      setProducts((prev) =>
+        prev.map((p) => {
+          const line = lines.find((l) => l.product.id === p.id);
+          return line && p.track_stock ? { ...p, stock: Math.max(0, p.stock - line.quantity) } : p;
+        })
+      );
+      setCart([]);
+      setReference("");
+      setMethod("cash");
+    } catch {
+      setError("Couldn't save this sale on the phone. Check that the phone has free storage and try again.");
     }
-    const { data: sale } = await supabase
-      .from("sales")
-      .select("*, sale_items(*)")
-      .eq("id", data as string)
-      .single();
-    setReceipt(sale as Sale);
-    setCart([]);
-    setReference("");
-    setMethod("cash");
-    await load();
     setBusy(false);
   }
 
@@ -158,6 +182,9 @@ export default function SellTab({ shop }: { shop: Shop }) {
       </div>
 
       {notice && <div className="notice">{notice}</div>}
+      {stale && products.length > 0 && !sync.online && (
+        <p className="muted">Offline: showing your product list from the last time you were connected.</p>
+      )}
 
       {loading ? (
         <p className="muted">Loading products…</p>
@@ -251,9 +278,9 @@ export default function SellTab({ shop }: { shop: Shop }) {
           shop={shop}
           mode={newItem}
           onClose={() => setNewItem(null)}
-          onCreated={async (p, qty) => {
+          onCreated={(p, qty) => {
             setNewItem(null);
-            await load();
+            setProducts((prev) => [...prev.filter((x) => x.id !== p.id), p].sort(byName));
             add(p, qty);
             setNotice(`Added ${p.name}`);
           }}
@@ -290,24 +317,29 @@ function NewItemForm({
     setBusy(true);
     setError("");
     const saleQty = Math.max(1, Math.floor(Number(qty) || 1));
-    const row = {
+    const product: Product = {
+      id: uuid(),
       shop_id: shop.id,
       name: name.trim(),
+      sku: null,
       price: Number(price),
       cost_price: Number(cost || 0),
+      stock: fromScan ? Math.max(0, Math.floor(Number(stock) || 0)) : 0,
+      low_stock_threshold: 5,
+      active: true,
       barcode: fromScan ? mode.barcode : null,
       // Scanned items are new stock the owner is counting. Quick items are sold without tracking.
       track_stock: fromScan,
       quick_added: !fromScan,
-      stock: fromScan ? Math.max(0, Math.floor(Number(stock) || 0)) : 0,
     };
-    const { data, error: err } = await supabase.from("products").insert(row).select("*").single();
-    if (err) {
-      setError(err.message);
+    try {
+      // Saved on the phone and sent to the server as soon as there's internet.
+      await enqueue({ kind: "product", shop_id: shop.id, payload: product });
+      onCreated(product, fromScan ? 1 : saleQty);
+    } catch {
+      setError("Couldn't save on the phone. Check free storage and try again.");
       setBusy(false);
-      return;
     }
-    onCreated(data as Product, fromScan ? 1 : saleQty);
   }
 
   return (
@@ -344,7 +376,7 @@ function NewItemForm({
             <input id="ni-qty" required type="number" min="1" step="1" inputMode="numeric" value={qty} onChange={(e) => setQty(e.target.value)} />
           </>
         )}
-        {error && <div className="error">{error.includes("barcode_key") ? "That barcode already exists." : error}</div>}
+        {error && <div className="error">{error}</div>}
         <div className="row" style={{ marginTop: 12 }}>
           <button type="button" className="btn ghost grow" onClick={onClose}>
             Cancel

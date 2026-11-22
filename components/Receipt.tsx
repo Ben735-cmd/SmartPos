@@ -63,6 +63,11 @@ export default function Receipt({ shop, sale, onClose }: { shop: Shop; sale: Sal
           {sale.payment_reference ? ` (${sale.payment_reference})` : ""}
         </div>
         {sale.status === "refunded" && <div className="error center">REFUNDED</div>}
+        {sale.pending && (
+          <div className="muted center no-print" style={{ marginTop: 6 }}>
+            Saved on this phone. It will sync when there's internet.
+          </div>
+        )}
         <p className="center" style={{ marginTop: 12 }}>
           Thank you!
         </p>
