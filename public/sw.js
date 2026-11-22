@@ -1,7 +1,7 @@
 // SmartPOS service worker: lets the app open without internet.
 // Only SmartPOS's own files are cached. Supabase API calls are never touched here;
 // the app saves its own data on the device (see lib/offline.ts).
-const VERSION = "v2"; // bumped so phones pick up the new logo and icons
+const VERSION = "v3"; // bumped so phones pick up the new logo and icons
 const STATIC = `smartpos-static-${VERSION}`;
 const PAGES = `smartpos-pages-${VERSION}`;
 
@@ -40,12 +40,14 @@ function fetchWithTimeout(req, ms) {
 // Pages: use the network when it answers quickly, otherwise the last saved copy.
 async function networkFirst(req) {
   const cache = await caches.open(PAGES);
+  // Each page is saved under its own path, so /about never replaces the app's home page.
+  const key = new URL(req.url).pathname;
   try {
     const res = await fetchWithTimeout(req, 5000);
-    if (res.ok && !res.redirected) cache.put("/", res.clone());
+    if (res.ok && !res.redirected) cache.put(key, res.clone());
     return res;
   } catch (_) {
-    const saved = await cache.match("/");
+    const saved = (await cache.match(key)) || (await cache.match("/"));
     return (
       saved ||
       new Response("You're offline and SmartPOS hasn't been opened on this phone with internet yet.", {

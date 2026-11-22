@@ -149,11 +149,12 @@ function SignIn() {
       <img className="auth-logo" src="/logo.png" alt="SmartPOS: Keep Track. Move Fast. Grow Big." width={782} height={534} />
       <form className="card" onSubmit={submit}>
         <label htmlFor="email">Email</label>
-        <input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
+        <input id="email" type="email" required placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
         <label htmlFor="password">Password</label>
         <input
           id="password"
           type="password"
+          placeholder="At least 6 characters"
           required
           minLength={6}
           value={password}

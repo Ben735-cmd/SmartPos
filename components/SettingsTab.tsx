@@ -10,7 +10,7 @@ const OPTIONS: { id: Provider; title: string; text: string }[] = [
   { id: "flutterwave", title: "Flutterwave (real payments)", text: "Customer is prompted on their phone and the sale is marked paid automatically." },
 ];
 
-export default function SettingsTab({ shop }: { shop: Shop }) {
+export default function SettingsTab({ shop, onSignOut }: { shop: Shop; onSignOut: () => void }) {
   const [provider, setProvider] = useState<Provider>("manual");
   const [hasKey, setHasKey] = useState(false);
   const [key, setKey] = useState("");
@@ -47,13 +47,26 @@ export default function SettingsTab({ shop }: { shop: Shop }) {
   if (loading) return <p className="muted">Loading…</p>;
 
   return (
+    <>
+    <div className="card">
+      <h2>{shop.name}</h2>
+      <p className="muted">Your shop on SmartPOS.</p>
+      <div className="row stretch" style={{ marginTop: 8 }}>
+        <a className="btn ghost grow" href="/about">
+          About
+        </a>
+        <button className="btn ghost grow" onClick={onSignOut}>
+          Sign out
+        </button>
+      </div>
+    </div>
     <div className="card">
       <h2>Mobile payments</h2>
       <p className="muted">Choose how MTN MoMo, Airtel Money and Zamtel Kwacha payments work at the till.</p>
 
       {OPTIONS.map((o) => (
-        <label key={o.id} className="list-item" style={{ display: "block", cursor: "pointer" }}>
-          <input type="radio" name="provider" checked={provider === o.id} onChange={() => setProvider(o.id)} style={{ width: "auto", marginRight: 8 }} />
+        <label key={o.id} className="option">
+          <input type="radio" name="provider" checked={provider === o.id} onChange={() => setProvider(o.id)} />
           <strong>{o.title}</strong>
           <div className="muted">{o.text}</div>
         </label>
@@ -77,5 +90,6 @@ export default function SettingsTab({ shop }: { shop: Shop }) {
         {busy ? "Saving…" : "Save"}
       </button>
     </div>
+    </>
   );
 }

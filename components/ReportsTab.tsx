@@ -190,7 +190,7 @@ export default function ReportsTab({ shop }: { shop: Shop }) {
 
       {lowStock.length > 0 && (
         <div className="card">
-          <h3>⚠️ Low stock</h3>
+          <h3>Low stock</h3>
           {lowStock.map((p) => (
             <div className="row between list-item" key={p.id}>
               <span>{p.name}</span>
@@ -251,7 +251,7 @@ export default function ReportsTab({ shop }: { shop: Shop }) {
           <div className="row">
             <div className="grow">
               <label htmlFor="eamt">Amount (K)</label>
-              <input id="eamt" required type="number" min="0" step="0.01" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
+              <input id="eamt" placeholder="0.00" required type="number" min="0" step="0.01" inputMode="decimal" value={amount} onChange={(e) => setAmount(e.target.value)} />
             </div>
             <div className="grow">
               <label htmlFor="ecat">Category</label>

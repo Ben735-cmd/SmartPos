@@ -8,13 +8,14 @@ import SalesTab from "@/components/SalesTab";
 import ReportsTab from "@/components/ReportsTab";
 import SettingsTab from "@/components/SettingsTab";
 import StatusBar from "@/components/StatusBar";
+import Icon from "@/components/Icons";
 
 const TABS = [
-  { id: "sell", label: "🛒 Sell" },
-  { id: "products", label: "📦 Products" },
-  { id: "sales", label: "🧾 Sales" },
-  { id: "reports", label: "📊 Reports" },
-  { id: "settings", label: "⚙️ Settings" },
+  { id: "sell", label: "Sell", icon: "sell" },
+  { id: "products", label: "Products", icon: "products" },
+  { id: "sales", label: "Sales", icon: "sales" },
+  { id: "reports", label: "Reports", icon: "reports" },
+  { id: "settings", label: "Settings", icon: "settings" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -38,9 +39,6 @@ export default function Home() {
               </div>
               <div className="row">
                 <StatusBar />
-                <button className="btn ghost small" onClick={signOut}>
-                  Sign out
-                </button>
               </div>
             </div>
 
@@ -49,12 +47,15 @@ export default function Home() {
             {tab === "products" && <ProductsTab key="products" shop={shop} />}
             {tab === "sales" && <SalesTab key="sales" shop={shop} />}
             {tab === "reports" && <ReportsTab key="reports" shop={shop} />}
-            {tab === "settings" && <SettingsTab key="settings" shop={shop} />}
+            {tab === "settings" && <SettingsTab key="settings" shop={shop} onSignOut={signOut} />}
           </div>
 
           <nav className="tabs">
             {TABS.map((t) => (
               <button key={t.id} className={tab === t.id ? "active" : ""} onClick={() => setTab(t.id)}>
+                <span className="ico">
+                  <Icon name={t.icon} />
+                </span>
                 {t.label}
               </button>
             ))}

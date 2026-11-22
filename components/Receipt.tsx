@@ -38,7 +38,7 @@ export default function Receipt({ shop, sale, onClose }: { shop: Shop; sale: Sal
 
   return (
     <div className="overlay" onClick={onClose}>
-      <div className="receipt" onClick={(e) => e.stopPropagation()}>
+      <div className="receipt paper" onClick={(e) => e.stopPropagation()}>
         <div className="center">
           <strong>{shop.name}</strong>
           <div>Receipt {sale.receipt_no}</div>

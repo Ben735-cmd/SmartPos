@@ -215,7 +215,7 @@ export default function BulkAdd({
           </ul>
           {error && <div className="error">{error}</div>}
           <button className="btn full" disabled={busy} onClick={() => photoRef.current?.click()}>
-            {busy ? "Reading your photo… (can take up to 30 seconds)" : "📷 Take or choose a photo"}
+            {busy ? "Reading your photo… (can take up to 30 seconds)" : "Take or choose a photo"}
           </button>
           <input ref={photoRef} type="file" accept="image/*" capture="environment" hidden onChange={onPhoto} />
         </div>
@@ -235,7 +235,7 @@ export default function BulkAdd({
       {[
         { m: "starter" as Mode, t: "📋 Starter pack", d: "Common items for your type of shop. Just add prices." },
         { m: "paste" as Mode, t: "📄 Spreadsheet or CSV", d: "Paste rows from Excel or Google Sheets, or upload a CSV." },
-        { m: "photo" as Mode, t: "📷 Photo of your list", d: "Photograph a stock book or price list. AI reads it." },
+        { m: "photo" as Mode, t: "Photo of your list", d: "Photograph a stock book or price list. AI reads it." },
       ].map((o) => (
         <button
           key={o.m}

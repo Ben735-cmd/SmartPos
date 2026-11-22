@@ -9,6 +9,7 @@ import { PAYMENT_LABELS, type PaymentMethod, type Product, type Sale, type Shop 
 import Receipt from "./Receipt";
 import BarcodeScanner from "./BarcodeScanner";
 import MomoPay from "./MomoPay";
+import Icon from "./Icons";
 import { NETWORK_FOR, getProvider, type Provider } from "@/lib/momo";
 
 type CartLine = { product: Product; quantity: number };
@@ -37,6 +38,8 @@ export default function SellTab({ shop }: { shop: Shop }) {
   const [provider, setProvider] = useState<Provider>("manual");
   const [momoOpen, setMomoOpen] = useState(false);
   const [manualMomo, setManualMomo] = useState(false);
+  const cartRef = useRef<HTMLDivElement>(null);
+  const [cartInView, setCartInView] = useState(false);
 
   const productsRef = useRef<Product[]>([]);
   productsRef.current = products;
@@ -80,6 +83,14 @@ export default function SellTab({ shop }: { shop: Shop }) {
       import("@zxing/browser").catch(() => {});
     });
   }, []);
+
+  useEffect(() => {
+    const el = cartRef.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(([e]) => setCartInView(e.isIntersecting), { threshold: 0.2 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [cart.length > 0]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -188,7 +199,8 @@ export default function SellTab({ shop }: { shop: Shop }) {
           enterKeyHint="search"
         />
         <button className="btn" onClick={() => setScanning(true)} aria-label="Scan barcode">
-          📷 Scan
+          <svg className="ico-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l1.6-2.4h6.8L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z" /><circle cx="12" cy="13" r="3.6" /></svg>
+          Scan
         </button>
       </div>
 
@@ -202,9 +214,12 @@ export default function SellTab({ shop }: { shop: Shop }) {
       ) : (
         <>
           {products.length === 0 && (
-            <div className="card center">
-              <p>No products yet.</p>
-              <p className="muted">Add many at once in the Products tab, or tap “Item not listed” to sell something right now.</p>
+            <div className="card empty">
+              <div className="art">
+                <Icon name="box" />
+              </div>
+              <h3>Add your first products</h3>
+              <p className="muted">Load many at once in the Products tab, or tap “Item not listed” below to sell something right now.</p>
             </div>
           )}
           <div className="grid">
@@ -212,7 +227,9 @@ export default function SellTab({ shop }: { shop: Shop }) {
               <button key={p.id} className="product-tile" disabled={soldOut(p)} onClick={() => add(p)}>
                 <div className="pname">{p.name}</div>
                 <div className="pprice">{money(p.price)}</div>
-                <div className="muted">
+                <div
+                  className={`muted stock ${!p.track_stock ? "none" : p.stock <= 0 ? "out" : p.stock <= p.low_stock_threshold ? "low" : ""}`}
+                >
                   {!p.track_stock ? "Stock not tracked" : p.stock <= 0 ? "Out of stock" : `${p.stock} in stock`}
                 </div>
               </button>
@@ -225,7 +242,7 @@ export default function SellTab({ shop }: { shop: Shop }) {
       )}
 
       {cart.length > 0 && (
-        <div className="card" style={{ marginTop: 12 }}>
+        <div className="card cart" ref={cartRef} style={{ marginTop: 14 }}>
           <h2>Current sale</h2>
           {cart.map((l) => (
             <div className="list-item row" key={l.product.id}>
@@ -233,40 +250,43 @@ export default function SellTab({ shop }: { shop: Shop }) {
                 <div>{l.product.name}</div>
                 <div className="muted">{money(l.product.price)} each</div>
               </div>
-              <button className="btn ghost small" onClick={() => setQty(l.product.id, l.quantity - 1)}>
-                −
-              </button>
-              <strong style={{ minWidth: 24, textAlign: "center" }}>{l.quantity}</strong>
-              <button
-                className="btn ghost small"
-                disabled={l.quantity >= maxQty(l.product)}
-                onClick={() => setQty(l.product.id, l.quantity + 1)}
-              >
-                +
-              </button>
-              <div style={{ minWidth: 80 }} className="right">
+              <div className="qty">
+                <button aria-label={`Remove one ${l.product.name}`} onClick={() => setQty(l.product.id, l.quantity - 1)}>
+                  −
+                </button>
+                <strong>{l.quantity}</strong>
+                <button
+                  aria-label={`Add one ${l.product.name}`}
+                  disabled={l.quantity >= maxQty(l.product)}
+                  onClick={() => setQty(l.product.id, l.quantity + 1)}
+                >
+                  +
+                </button>
+              </div>
+              <div style={{ minWidth: 84, fontVariantNumeric: "tabular-nums", fontWeight: 600 }} className="right">
                 {money(l.product.price * l.quantity)}
               </div>
             </div>
           ))}
 
-          <div className="row between" style={{ marginTop: 12 }}>
+          <div className="total-line">
             <span>Total</span>
             <span className="big">{money(total)}</span>
           </div>
 
-          <label htmlFor="method">Payment</label>
-          <select id="method" value={method} onChange={(e) => setMethod(e.target.value as PaymentMethod)}>
+          <label id="method-label">Payment</label>
+          <div className="methods" role="group" aria-labelledby="method-label">
             {(Object.keys(PAYMENT_LABELS) as PaymentMethod[]).map((m) => (
-              <option key={m} value={m}>
+              <button key={m} type="button" className="method" aria-pressed={method === m} onClick={() => setMethod(m)}>
+                <span className={`dot ${m}`} />
                 {PAYMENT_LABELS[m]}
-              </option>
+              </button>
             ))}
-          </select>
+          </div>
 
           {method !== "cash" && !useMomo && (
             <>
-              <label htmlFor="ref">Transaction reference (optional)</label>
+              <label htmlFor="ref">Transaction ID from the SMS (optional)</label>
               <input id="ref" value={reference} onChange={(e) => setReference(e.target.value)} placeholder="e.g. MP2611.1234.A56789" />
             </>
           )}
@@ -289,6 +309,18 @@ export default function SellTab({ shop }: { shop: Shop }) {
           )}
           <button className="btn ghost full" style={{ marginTop: 8 }} onClick={() => setCart([])}>
             Clear
+          </button>
+        </div>
+      )}
+
+      {cart.length > 0 && !cartInView && (
+        <div className="chargebar">
+          <button onClick={() => cartRef.current?.scrollIntoView({ behavior: "smooth", block: "center" })}>
+            <span className="count">
+              {cart.reduce((n, l) => n + l.quantity, 0)} item{cart.reduce((n, l) => n + l.quantity, 0) === 1 ? "" : "s"}
+            </span>
+            <span className="amt">{money(total)}</span>
+            <span>Review and charge</span>
           </button>
         </div>
       )}
@@ -389,26 +421,26 @@ function NewItemForm({
           <p className="muted">Sell it now. You can set up its stock later in Products.</p>
         )}
         <label htmlFor="ni-name">Name</label>
-        <input id="ni-name" required autoFocus value={name} onChange={(e) => setName(e.target.value)} />
+        <input id="ni-name" placeholder="e.g. Cooking oil 2L" required autoFocus value={name} onChange={(e) => setName(e.target.value)} />
         <div className="row">
           <div className="grow">
             <label htmlFor="ni-price">Selling price (K)</label>
-            <input id="ni-price" required type="number" min="0.01" step="0.01" inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} />
+            <input id="ni-price" placeholder="0.00" required type="number" min="0.01" step="0.01" inputMode="decimal" value={price} onChange={(e) => setPrice(e.target.value)} />
           </div>
           <div className="grow">
             <label htmlFor="ni-cost">Cost (K, optional)</label>
-            <input id="ni-cost" type="number" min="0" step="0.01" inputMode="decimal" value={cost} onChange={(e) => setCost(e.target.value)} />
+            <input id="ni-cost" placeholder="0.00" type="number" min="0" step="0.01" inputMode="decimal" value={cost} onChange={(e) => setCost(e.target.value)} />
           </div>
         </div>
         {fromScan ? (
           <>
             <label htmlFor="ni-stock">How many do you have in stock?</label>
-            <input id="ni-stock" required type="number" min="1" step="1" inputMode="numeric" value={stock} onChange={(e) => setStock(e.target.value)} />
+            <input id="ni-stock" placeholder="e.g. 12" required type="number" min="1" step="1" inputMode="numeric" value={stock} onChange={(e) => setStock(e.target.value)} />
           </>
         ) : (
           <>
             <label htmlFor="ni-qty">Quantity sold now</label>
-            <input id="ni-qty" required type="number" min="1" step="1" inputMode="numeric" value={qty} onChange={(e) => setQty(e.target.value)} />
+            <input id="ni-qty" placeholder="1" required type="number" min="1" step="1" inputMode="numeric" value={qty} onChange={(e) => setQty(e.target.value)} />
           </>
         )}
         {error && <div className="error">{error}</div>}

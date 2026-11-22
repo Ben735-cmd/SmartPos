@@ -138,6 +138,7 @@ export default function ImportReview({
             <div className="row">
               <input
                 aria-label="Product name"
+                placeholder="Product name"
                 value={r.name}
                 onChange={(e) => set(i, { name: e.target.value })}
                 style={{ fontWeight: 600 }}
@@ -153,15 +154,15 @@ export default function ImportReview({
             <div className="row" style={{ marginTop: 6 }}>
               <div className="grow">
                 <label>Price (K)</label>
-                <input type="number" min="0" step="0.01" inputMode="decimal" value={r.price} onChange={(e) => set(i, { price: e.target.value })} />
+                <input type="number" placeholder="0.00" min="0" step="0.01" inputMode="decimal" value={r.price} onChange={(e) => set(i, { price: e.target.value })} />
               </div>
               <div className="grow">
                 <label>Cost (K)</label>
-                <input type="number" min="0" step="0.01" inputMode="decimal" value={r.cost} onChange={(e) => set(i, { cost: e.target.value })} />
+                <input type="number" placeholder="0.00" min="0" step="0.01" inputMode="decimal" value={r.cost} onChange={(e) => set(i, { cost: e.target.value })} />
               </div>
               <div className="grow">
                 <label>Stock</label>
-                <input type="number" min="0" step="1" inputMode="numeric" value={r.stock} onChange={(e) => set(i, { stock: e.target.value })} />
+                <input type="number" placeholder="0" min="0" step="1" inputMode="numeric" value={r.stock} onChange={(e) => set(i, { stock: e.target.value })} />
               </div>
             </div>
             <div className="row" style={{ marginTop: 6 }}>

@@ -1,5 +1,6 @@
 "use client";
 
+import Icon from "./Icons";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { money } from "@/lib/format";
@@ -149,7 +150,7 @@ export default function ProductsTab({ shop }: { shop: Shop }) {
         <form className="card" onSubmit={save}>
           <h2>{form.id ? "Edit product" : "Add product"}</h2>
           <label htmlFor="pname">Name</label>
-          <input id="pname" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          <input id="pname" required placeholder="e.g. Mealie meal 25kg" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
 
           <label htmlFor="pbarcode">Barcode (optional)</label>
           <div className="row">
@@ -157,22 +158,24 @@ export default function ProductsTab({ shop }: { shop: Shop }) {
               id="pbarcode"
               className="grow"
               inputMode="numeric"
+              placeholder="Scan or type the number"
               value={form.barcode}
               onChange={(e) => setForm({ ...form, barcode: e.target.value.replace(/\s+/g, "") })}
             />
             <button type="button" className="btn ghost" onClick={() => setScanning(true)}>
-              📷 Scan
+              <svg className="ico-inline" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l1.6-2.4h6.8L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z" /><circle cx="12" cy="13" r="3.6" /></svg>
+              Scan
             </button>
           </div>
 
           <div className="row">
             <div className="grow">
               <label htmlFor="pprice">Selling price (K)</label>
-              <input id="pprice" required type="number" min="0" step="0.01" inputMode="decimal" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
+              <input id="pprice" placeholder="0.00" required type="number" min="0" step="0.01" inputMode="decimal" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
             </div>
             <div className="grow">
               <label htmlFor="pcost">Cost price (K)</label>
-              <input id="pcost" type="number" min="0" step="0.01" inputMode="decimal" value={form.cost_price} onChange={(e) => setForm({ ...form, cost_price: e.target.value })} />
+              <input id="pcost" placeholder="0.00" type="number" min="0" step="0.01" inputMode="decimal" value={form.cost_price} onChange={(e) => setForm({ ...form, cost_price: e.target.value })} />
             </div>
           </div>
 
@@ -190,11 +193,11 @@ export default function ProductsTab({ shop }: { shop: Shop }) {
             <div className="row">
               <div className="grow">
                 <label htmlFor="pstock">Stock on hand</label>
-                <input id="pstock" required type="number" min="0" step="1" inputMode="numeric" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} />
+                <input id="pstock" placeholder="0" required type="number" min="0" step="1" inputMode="numeric" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} />
               </div>
               <div className="grow">
                 <label htmlFor="plow">Low-stock alert at</label>
-                <input id="plow" type="number" min="0" step="1" inputMode="numeric" value={form.low_stock_threshold} onChange={(e) => setForm({ ...form, low_stock_threshold: e.target.value })} />
+                <input id="plow" placeholder="5" type="number" min="0" step="1" inputMode="numeric" value={form.low_stock_threshold} onChange={(e) => setForm({ ...form, low_stock_threshold: e.target.value })} />
               </div>
             </div>
           )}
@@ -267,7 +270,13 @@ export default function ProductsTab({ shop }: { shop: Shop }) {
         {loading ? (
           <p className="muted">Loading…</p>
         ) : products.length === 0 ? (
-          <p className="muted center">Nothing here yet. Tap “Add many” to load a starter pack, a spreadsheet or a photo of your list.</p>
+          <div className="empty">
+            <div className="art">
+              <Icon name="box" />
+            </div>
+            <h3>No products yet</h3>
+            <p className="muted">Tap “Add many” to load a starter pack, a spreadsheet or a photo of your list.</p>
+          </div>
         ) : (
           shown.map((p) => {
             const out = p.track_stock && p.stock <= 0;

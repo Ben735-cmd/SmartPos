@@ -1,5 +1,6 @@
 "use client";
 
+import Icon from "./Icons";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { money, formatTime } from "@/lib/format";
@@ -57,7 +58,13 @@ export default function SalesTab({ shop }: { shop: Shop }) {
         {loading ? (
           <p className="muted">Loading…</p>
         ) : sales.length === 0 ? (
-          <p className="muted center">No sales recorded yet.</p>
+          <div className="empty">
+            <div className="art">
+              <Icon name="receipt" />
+            </div>
+            <h3>No sales yet</h3>
+            <p className="muted">Sales you make on the Sell tab show up here with their receipts.</p>
+          </div>
         ) : (
           sales.map((s) => (
             <div className="list-item" key={s.id}>

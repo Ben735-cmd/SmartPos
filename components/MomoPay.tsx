@@ -112,7 +112,7 @@ export default function MomoPay({
 
         {waiting && (
           <>
-            <p className="center" style={{ fontSize: 18 }}>⏳ Waiting for the customer to approve…</p>
+            <p className="center" style={{ fontSize: 18 }}>Waiting for the customer to approve…</p>
             <p className="muted center">Ask them to check their phone. This updates by itself.</p>
             {payment?.message && <p className="muted center">{payment.message}</p>}
             <button className="btn ghost full" onClick={cancel}>
@@ -121,7 +121,7 @@ export default function MomoPay({
           </>
         )}
 
-        {payment?.status === "succeeded" && <p className="center" style={{ fontSize: 20 }}>✅ Paid</p>}
+        {payment?.status === "succeeded" && <p className="center notice" style={{ fontSize: 20, fontWeight: 650 }}>Paid</p>}
 
         {(payment?.status === "failed" || payment?.status === "cancelled") && (
           <>
