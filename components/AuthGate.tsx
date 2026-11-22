@@ -119,6 +119,32 @@ function SignIn() {
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
 
+  async function google() {
+    setBusy(true);
+    setError("");
+    setInfo("");
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: window.location.origin },
+      });
+      if (error) {
+        setError(
+          isNetworkError(error)
+            ? "No internet connection. Signing in needs internet the first time."
+            : /not enabled|unsupported provider/i.test(error.message)
+              ? "Google sign-in isn't switched on yet. Use your email and password for now."
+              : error.message
+        );
+        setBusy(false);
+      }
+      // On success the browser leaves for Google, then comes back signed in.
+    } catch {
+      setError("No internet connection. Signing in needs internet the first time.");
+      setBusy(false);
+    }
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
@@ -166,6 +192,16 @@ function SignIn() {
         <div style={{ height: 8 }} />
         <button className="btn full" disabled={busy}>
           {busy ? "Please wait…" : mode === "in" ? "Sign in" : "Create account"}
+        </button>
+        <div className="divider">or</div>
+        <button type="button" className="btn ghost full google" disabled={busy} onClick={google}>
+          <svg viewBox="0 0 48 48" width="20" height="20" aria-hidden="true">
+            <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z" />
+            <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.6 5.9c4.5-4.1 7-10.2 7-17.6z" />
+            <path fill="#FBBC05" d="M10.5 28.7c-.5-1.4-.8-3-.8-4.7s.3-3.2.8-4.7l-7.9-6.1C.9 16.4 0 20.100 0 24s.9 7.600 2.600 10.800l7.900-6.100z" />
+            <path fill="#34A853" d="M24 48c6.5 0 11.900-2.100 15.900-5.800l-7.600-5.900c-2.100 1.400-4.900 2.300-8.300 2.300-6.300 0-11.600-4.100-13.500-9.800l-7.900 6.100C6.500 42.600 14.600 48 24 48z" />
+          </svg>
+          Continue with Google
         </button>
         <p className="center muted" style={{ marginTop: 12 }}>
           {mode === "in" ? "New here?" : "Already have an account?"}{" "}
