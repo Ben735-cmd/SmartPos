@@ -80,8 +80,9 @@ export default function About() {
       </div>
 
       <p className="muted center" style={{ marginTop: 32 }}>
-        SmartPOS · Keep Track. Move Fast. Grow Big.
+        <a href="/privacy">Privacy Policy</a> · <a href="/terms">Terms of Service</a>
       </p>
+      <p className="muted center">SmartPOS · Keep Track. Move Fast. Grow Big.</p>
     </main>
   );
 }

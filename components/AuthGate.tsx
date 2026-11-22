@@ -218,6 +218,9 @@ function SignIn() {
           </a>
         </p>
       </form>
+      <p className="muted center" style={{ fontSize: 12.5 }}>
+        By continuing you agree to our <a href="/terms">Terms</a> and <a href="/privacy">Privacy Policy</a>.
+      </p>
     </div>
   );
 }
