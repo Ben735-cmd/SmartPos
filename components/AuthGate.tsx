@@ -119,6 +119,19 @@ function SignIn() {
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
 
+  // Show why a sign-in attempt failed when Supabase sends the person back with an error in the address.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search || window.location.hash.replace(/^#/, ""));
+    const desc = params.get("error_description");
+    if (!desc) return;
+    setError(
+      /exchange external code/i.test(desc)
+        ? "Google sign-in couldn't finish. Please try again, or use your email and password for now."
+        : desc.replace(/\+/g, " ")
+    );
+    window.history.replaceState(null, "", window.location.pathname);
+  }, []);
+
   async function google() {
     setBusy(true);
     setError("");
