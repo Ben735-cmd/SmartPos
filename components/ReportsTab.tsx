@@ -6,6 +6,7 @@ import { daysAgo, localDate, money } from "@/lib/format";
 import { loadReportData } from "@/lib/data";
 import { outboxAll } from "@/lib/idb";
 import { discardOp, enqueue, friendlyError, useSync } from "@/lib/offline";
+import ReconcileCard from "./ReconcileCard";
 import { uuid } from "@/lib/pending";
 import { PAYMENT_LABELS, type Expense, type PaymentMethod, type Product, type Sale, type Shop } from "@/lib/types";
 
@@ -225,6 +226,8 @@ export default function ReportsTab({ shop }: { shop: Shop }) {
           ))
         )}
       </div>
+
+      <ReconcileCard shopId={shop.id} sales={sales} online={sync.online} />
 
       <div className="card">
         <h3>Best sellers (30 days)</h3>
