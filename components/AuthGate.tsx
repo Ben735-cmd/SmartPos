@@ -82,7 +82,7 @@ export default function AuthGate({
       return;
     }
     if (current) {
-      for (const k of ["products", "sales", "reports"]) await kvDel(`${current.id}:${k}`);
+      for (const k of ["products", "sales", "reports", "provider"]) await kvDel(`${current.id}:${k}`);
     }
     localStorage.removeItem(ACTIVE_FLAG);
     await kvDel("shop");

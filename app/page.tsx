@@ -6,6 +6,7 @@ import SellTab from "@/components/SellTab";
 import ProductsTab from "@/components/ProductsTab";
 import SalesTab from "@/components/SalesTab";
 import ReportsTab from "@/components/ReportsTab";
+import SettingsTab from "@/components/SettingsTab";
 import StatusBar from "@/components/StatusBar";
 
 const TABS = [
@@ -13,6 +14,7 @@ const TABS = [
   { id: "products", label: "📦 Products" },
   { id: "sales", label: "🧾 Sales" },
   { id: "reports", label: "📊 Reports" },
+  { id: "settings", label: "⚙️ Settings" },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -47,6 +49,7 @@ export default function Home() {
             {tab === "products" && <ProductsTab key="products" shop={shop} />}
             {tab === "sales" && <SalesTab key="sales" shop={shop} />}
             {tab === "reports" && <ReportsTab key="reports" shop={shop} />}
+            {tab === "settings" && <SettingsTab key="settings" shop={shop} />}
           </div>
 
           <nav className="tabs">

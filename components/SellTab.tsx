@@ -8,6 +8,8 @@ import { buildSalePayload, salePayloadToSale, uuid } from "@/lib/pending";
 import { PAYMENT_LABELS, type PaymentMethod, type Product, type Sale, type Shop } from "@/lib/types";
 import Receipt from "./Receipt";
 import BarcodeScanner from "./BarcodeScanner";
+import MomoPay from "./MomoPay";
+import { NETWORK_FOR, getProvider, type Provider } from "@/lib/momo";
 
 type CartLine = { product: Product; quantity: number };
 
@@ -32,6 +34,9 @@ export default function SellTab({ shop }: { shop: Shop }) {
   const [receipt, setReceipt] = useState<Sale | null>(null);
   const [scanning, setScanning] = useState(false);
   const [newItem, setNewItem] = useState<NewItemMode | null>(null);
+  const [provider, setProvider] = useState<Provider>("manual");
+  const [momoOpen, setMomoOpen] = useState(false);
+  const [manualMomo, setManualMomo] = useState(false);
 
   const productsRef = useRef<Product[]>([]);
   productsRef.current = products;
@@ -53,6 +58,8 @@ export default function SellTab({ shop }: { shop: Shop }) {
 
   useEffect(() => {
     load(true);
+    getProvider(shop.id, true).then(setProvider);
+    getProvider(shop.id).then(setProvider);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // After a background sync finishes, pick up the server's numbers.
@@ -83,6 +90,9 @@ export default function SellTab({ shop }: { shop: Shop }) {
   }, [products, query]);
 
   const total = cart.reduce((sum, l) => sum + l.product.price * l.quantity, 0);
+  // Automatic mobile payments need internet; offline (or if the cashier prefers) it falls back to typing the reference.
+  const network = NETWORK_FOR[method];
+  const useMomo = !!network && provider !== "manual" && sync.online && !manualMomo;
 
   function add(p: Product, qty = 1) {
     setError("");
@@ -141,12 +151,12 @@ export default function SellTab({ shop }: { shop: Shop }) {
   }
 
   /** The sale is saved on this phone first, so it works the same with or without internet. */
-  async function checkout() {
+  async function checkout(paidRef?: string) {
     setBusy(true);
     setError("");
     try {
       const lines = cart.map((l) => ({ product: l.product, quantity: l.quantity }));
-      const payload = buildSalePayload(shop.id, lines, method, reference.trim() || null);
+      const payload = buildSalePayload(shop.id, lines, method, paidRef ?? (reference.trim() || null));
       await enqueue({ kind: "sale", shop_id: shop.id, payload });
       setReceipt(salePayloadToSale(payload));
       // Update the screen's stock right away; the server's numbers replace this after syncing.
@@ -159,6 +169,7 @@ export default function SellTab({ shop }: { shop: Shop }) {
       setCart([]);
       setReference("");
       setMethod("cash");
+      setManualMomo(false);
     } catch {
       setError("Couldn't save this sale on the phone. Check that the phone has free storage and try again.");
     }
@@ -253,7 +264,7 @@ export default function SellTab({ shop }: { shop: Shop }) {
             ))}
           </select>
 
-          {method !== "cash" && (
+          {method !== "cash" && !useMomo && (
             <>
               <label htmlFor="ref">Transaction reference (optional)</label>
               <input id="ref" value={reference} onChange={(e) => setReference(e.target.value)} placeholder="e.g. MP2611.1234.A56789" />
@@ -262,13 +273,37 @@ export default function SellTab({ shop }: { shop: Shop }) {
 
           {error && <div className="error">{error}</div>}
           <div style={{ height: 8 }} />
-          <button className="btn full" disabled={busy} onClick={checkout}>
-            {busy ? "Saving…" : `Complete sale · ${money(total)}`}
-          </button>
+          {useMomo ? (
+            <>
+              <button className="btn full" disabled={busy} onClick={() => setMomoOpen(true)}>
+                {`Request ${PAYMENT_LABELS[method]} payment · ${money(total)}`}
+              </button>
+              <button className="btn ghost full" style={{ marginTop: 8 }} onClick={() => setManualMomo(true)}>
+                Customer already paid? Enter reference
+              </button>
+            </>
+          ) : (
+            <button className="btn full" disabled={busy} onClick={() => checkout()}>
+              {busy ? "Saving…" : `Complete sale · ${money(total)}`}
+            </button>
+          )}
           <button className="btn ghost full" style={{ marginTop: 8 }} onClick={() => setCart([])}>
             Clear
           </button>
         </div>
+      )}
+
+      {momoOpen && network && (
+        <MomoPay
+          shopId={shop.id}
+          amount={total}
+          network={network}
+          onClose={() => setMomoOpen(false)}
+          onPaid={(ref) => {
+            setMomoOpen(false);
+            checkout(ref);
+          }}
+        />
       )}
 
       {scanning && <BarcodeScanner onDetect={onScan} onClose={() => setScanning(false)} title="Scan items" />}
