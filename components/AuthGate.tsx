@@ -105,7 +105,7 @@ function Splash({ text }: { text: string }) {
   return (
     <div className="splash">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/logo-mark.png" alt="SmartPOS" width={84} height={61} />
+      <img src="/logo-mark.svg" fetchPriority="high" alt="SmartPOS" width={84} height={61} />
       <div>{text}</div>
     </div>
   );
@@ -146,7 +146,7 @@ function SignIn() {
   return (
     <div className="auth">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img className="auth-logo" src="/logo.png" alt="SmartPOS: Keep Track. Move Fast. Grow Big." width={782} height={534} />
+      <img className="auth-logo" src="/logo.svg" fetchPriority="high" alt="SmartPOS: Keep Track. Move Fast. Grow Big." width={782} height={534} />
       <form className="card" onSubmit={submit}>
         <label htmlFor="email">Email</label>
         <input id="email" type="email" required placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
@@ -212,7 +212,7 @@ function CreateShop({ onCreated }: { onCreated: (s: Shop) => void }) {
   return (
     <div className="auth">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img className="auth-logo" src="/logo.png" alt="SmartPOS" width={782} height={534} style={{ width: "min(180px, 55%)" }} />
+      <img className="auth-logo" src="/logo.svg" fetchPriority="high" alt="SmartPOS" width={782} height={534} style={{ width: "min(180px, 55%)" }} />
       <h1 className="center">Set up your shop</h1>
       <form className="card" onSubmit={submit}>
         <label htmlFor="shop">Shop name</label>

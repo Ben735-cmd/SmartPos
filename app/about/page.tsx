@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { CONTACT } from "@/lib/brand";
+import { CONTACTS } from "@/lib/brand";
 
 export const metadata: Metadata = {
   title: "About SmartPOS",
@@ -7,7 +7,6 @@ export const metadata: Metadata = {
 };
 
 export default function About() {
-  const hasContact = CONTACT.whatsapp || CONTACT.email;
   return (
     <main className="about">
       <a className="back" href="/">
@@ -54,23 +53,31 @@ export default function About() {
       <h2>Your data is yours</h2>
       <p>Each shop sees only its own products, sales and reports. Nobody else can open them.</p>
 
-      {hasContact && (
-        <>
-          <h2>Contact us</h2>
-          <ul>
-            {CONTACT.whatsapp && (
-              <li>
-                WhatsApp: <a href={`https://wa.me/${CONTACT.whatsapp}`}>+{CONTACT.whatsapp}</a>
-              </li>
+      <h2>Contact us</h2>
+      <p>Questions, feedback or need help getting started? Reach out to us directly.</p>
+      <div className="facts">
+        {CONTACTS.map((c) => (
+          <div key={c.name}>
+            <strong>{c.name}</strong>
+            {c.phone && (
+              <span style={{ display: "block" }}>
+                Phone: <a href={`tel:${c.phone.replace(/\s+/g, "")}`}>{c.phone}</a>
+                {c.whatsapp && (
+                  <>
+                    {" · "}
+                    <a href={`https://wa.me/${c.whatsapp}`}>WhatsApp</a>
+                  </>
+                )}
+              </span>
             )}
-            {CONTACT.email && (
-              <li>
-                Email: <a href={`mailto:${CONTACT.email}`}>{CONTACT.email}</a>
-              </li>
+            {c.email && (
+              <span style={{ display: "block" }}>
+                Email: <a href={`mailto:${c.email}`}>{c.email}</a>
+              </span>
             )}
-          </ul>
-        </>
-      )}
+          </div>
+        ))}
+      </div>
 
       <p className="muted center" style={{ marginTop: 32 }}>
         SmartPOS · Keep Track. Move Fast. Grow Big.

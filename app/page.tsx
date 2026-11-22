@@ -31,7 +31,7 @@ export default function Home() {
             <div className="topbar">
               <div className="brand">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/logo-mark.png" alt="SmartPOS" width={44} height={32} />
+                <img src="/logo-mark.svg" fetchPriority="high" alt="SmartPOS" width={44} height={32} />
                 <div>
                   <div className="name">{shop.name}</div>
                   <div className="sub">SmartPOS</div>
