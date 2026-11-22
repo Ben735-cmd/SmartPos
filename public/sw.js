@@ -1,7 +1,7 @@
-// SmartPos service worker: lets the app open without internet.
-// Only SmartPos's own files are cached. Supabase API calls are never touched here;
+// SmartPOS service worker: lets the app open without internet.
+// Only SmartPOS's own files are cached. Supabase API calls are never touched here;
 // the app saves its own data on the device (see lib/offline.ts).
-const VERSION = "v1";
+const VERSION = "v2"; // bumped so phones pick up the new logo and icons
 const STATIC = `smartpos-static-${VERSION}`;
 const PAGES = `smartpos-pages-${VERSION}`;
 
@@ -48,7 +48,7 @@ async function networkFirst(req) {
     const saved = await cache.match("/");
     return (
       saved ||
-      new Response("You're offline and SmartPos hasn't been opened on this phone with internet yet.", {
+      new Response("You're offline and SmartPOS hasn't been opened on this phone with internet yet.", {
         status: 503,
         headers: { "Content-Type": "text/plain; charset=utf-8" },
       })

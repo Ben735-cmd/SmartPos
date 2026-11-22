@@ -91,14 +91,24 @@ export default function AuthGate({
     await supabase.auth.signOut({ scope: "local" });
   }
 
-  if (!ready) return <div className="auth center muted">Loading…</div>;
+  if (!ready) return <Splash text="Loading…" />;
   if (!current) {
     if (!session) return <SignIn />;
-    if (!shopLoaded) return <div className="auth center muted">Loading your shop…</div>;
+    if (!shopLoaded) return <Splash text="Loading your shop…" />;
     return <CreateShop onCreated={setShop} />;
   }
 
   return <>{children(current, signOut)}</>;
+}
+
+function Splash({ text }: { text: string }) {
+  return (
+    <div className="splash">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src="/logo-mark.png" alt="SmartPOS" width={84} height={61} />
+      <div>{text}</div>
+    </div>
+  );
 }
 
 function SignIn() {
@@ -135,8 +145,8 @@ function SignIn() {
 
   return (
     <div className="auth">
-      <h1 className="center">SmartPos</h1>
-      <p className="muted center">Simple point-of-sale for your shop</p>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img className="auth-logo" src="/logo.png" alt="SmartPOS: Keep Track. Move Fast. Grow Big." width={782} height={534} />
       <form className="card" onSubmit={submit}>
         <label htmlFor="email">Email</label>
         <input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />
@@ -200,6 +210,8 @@ function CreateShop({ onCreated }: { onCreated: (s: Shop) => void }) {
 
   return (
     <div className="auth">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img className="auth-logo" src="/logo.png" alt="SmartPOS" width={782} height={534} style={{ width: "min(180px, 55%)" }} />
       <h1 className="center">Set up your shop</h1>
       <form className="card" onSubmit={submit}>
         <label htmlFor="shop">Shop name</label>

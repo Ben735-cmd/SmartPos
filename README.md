@@ -1,4 +1,8 @@
-# SmartPos
+<p align="center">
+  <img src="public/logo.png" alt="SmartPOS: Keep Track. Move Fast. Grow Big." width="280" />
+</p>
+
+# SmartPOS
 
 A simple, affordable point-of-sale and business management system for small businesses in Zambia.
 
@@ -36,7 +40,7 @@ The `extract-products` edge function (`supabase/functions/extract-products`) use
 3. Add `GROQ_API_KEY`
 4. Optional: `GROQ_MODEL` to override the default (`qwen/qwen3.8-27b`)
 
-Only signed-in users can call it. Photos are sent to Groq to be read and are not stored by SmartPos.
+Only signed-in users can call it. Photos are sent to Groq to be read and are not stored by SmartPOS.
 
 ## Roadmap
 

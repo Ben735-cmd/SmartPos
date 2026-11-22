@@ -26,9 +26,13 @@ export default function Home() {
         <>
           <div className="shell">
             <div className="topbar">
-              <div>
-                <div className="name">{shop.name}</div>
-                <div className="sub">SmartPos</div>
+              <div className="brand">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/logo-mark.png" alt="SmartPOS" width={44} height={32} />
+                <div>
+                  <div className="name">{shop.name}</div>
+                  <div className="sub">SmartPOS</div>
+                </div>
               </div>
               <div className="row">
                 <StatusBar />

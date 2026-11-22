@@ -1,6 +1,6 @@
 // Reads a photo of a stock book / price list and returns a draft product list, using Groq (free tier).
 // Requires the secret GROQ_API_KEY (Supabase → Edge Functions → Secrets). Optional: GROQ_MODEL.
-// JWT verification is on: only signed-in SmartPos users can call this.
+// JWT verification is on: only signed-in SmartPOS users can call this.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 const cors = {

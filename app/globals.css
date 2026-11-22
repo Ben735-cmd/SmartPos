@@ -4,8 +4,8 @@
   --text: #111827;
   --muted: #6b7280;
   --line: #e5e7eb;
-  --brand: #0f766e;
-  --brand-dark: #0b5a54;
+  --brand: #2f7a4d; /* from the SmartPOS logo green */
+  --brand-dark: #1f5a38;
   --danger: #b91c1c;
   --warn: #b45309;
   --ok: #15803d;
@@ -35,8 +35,16 @@ p { margin: 0 0 8px; }
   display: flex; align-items: center; justify-content: space-between;
   padding: 4px 2px 12px;
 }
-.topbar .name { font-weight: 700; font-size: 18px; }
+.topbar .brand { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
+.topbar .brand img { height: 32px; width: auto; flex: none; }
+.topbar .brand > div { min-width: 0; }
+.topbar .name { font-weight: 700; font-size: 18px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .topbar .sub { color: var(--muted); font-size: 13px; }
+.topbar > .row { flex: none; }
+
+.auth-logo { display: block; width: min(250px, 72%); height: auto; margin: 0 auto 16px; }
+.splash { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 22vh; color: var(--muted); }
+.splash img { width: 84px; height: auto; }
 
 .tabs {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
